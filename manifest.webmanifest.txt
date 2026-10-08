@@ -1,0 +1,14 @@
+{
+  "name": "Camera Monitor | پخش زنده دوربین",
+  "short_name": "Camera Monitor",
+  "description": "Live phone camera streaming with a 4-digit code and motion alerts.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#060a18",
+  "theme_color": "#060a18",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
