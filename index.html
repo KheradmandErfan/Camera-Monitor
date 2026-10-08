@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060a18">
+<title>دوربین و نمایشگر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#eef3ff;
+  --ink-dim:rgba(238,243,255,.62);
+  --teal:#2fe0cf;
+  --violet:#8a6bff;
+  --rose:#ff5d7a;
+  --red:#ff2d3d;
+  --ease:cubic-bezier(.22,.9,.24,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Vazirmatn',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+  color:var(--ink);
+  background:#060a18;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- background ---------- */
+.bg{position:fixed;inset:0;overflow:hidden;z-index:0}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75;will-change:transform}
+.o1{width:60vmax;height:60vmax;background:radial-gradient(circle,var(--violet),transparent 65%);top:-20vmax;right:-18vmax;animation:drift1 22s ease-in-out infinite alternate}
+.o2{width:55vmax;height:55vmax;background:radial-gradient(circle,var(--teal),transparent 65%);bottom:-22vmax;left:-16vmax;animation:drift2 26s ease-in-out infinite alternate}
+.o3{width:38vmax;height:38vmax;background:radial-gradient(circle,#ff7ab0,transparent 65%);top:35%;left:30%;opacity:.35;animation:drift3 30s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(-12vmax,14vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(14vmax,-10vmax) scale(1.1)}}
+@keyframes drift3{to{transform:translate(-14vmax,-8vmax) scale(.85)}}
+
+/* ---------- liquid glass ---------- */
+.glass{
+  position:relative;
+  background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.05) 55%,rgba(255,255,255,.1));
+  -webkit-backdrop-filter:blur(26px) saturate(180%) brightness(1.08);
+  backdrop-filter:blur(26px) saturate(180%) brightness(1.08);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:30px;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(255,255,255,.08),
+    inset 1.5px 0 0 rgba(255,255,255,.12),
+    inset -1.5px 0 0 rgba(255,255,255,.12),
+    0 24px 60px -18px rgba(0,0,0,.55),
+    0 4px 14px rgba(0,0,0,.2);
+}
+.glass::before{ /* specular sheen */
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(120% 70% at 20% -10%,rgba(255,255,255,.34),transparent 55%);
+  mix-blend-mode:soft-light;
+}
+.glass > *{position:relative}
+
+/* ---------- screens ---------- */
+#app{position:fixed;inset:0;z-index:1}
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:max(20px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(26px) scale(.93);
+  filter:blur(14px);
+  transition:opacity .5s var(--ease),transform .6s var(--ease),filter .5s var(--ease),visibility 0s .6s;
+}
+.screen.active{
+  opacity:1;visibility:visible;pointer-events:auto;
+  transform:none;filter:none;
+  transition:opacity .55s var(--ease) .08s,transform .7s var(--ease) .08s,filter .55s var(--ease) .08s,visibility 0s;
+}
+.panel{width:min(100%,440px);padding:26px 22px}
+.wide{width:min(100%,760px)}
+h1{margin:0 0 6px;font-size:1.55rem;font-weight:800;line-height:1.5}
+p.sub{margin:0 0 20px;color:var(--ink-dim);font-size:.95rem;line-height:1.9}
+.center{text-align:center}
+
+/* role cards */
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.role{
+  all:unset;cursor:pointer;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:26px 12px 22px;text-align:center;border-radius:24px;
+  background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),0 10px 30px -10px rgba(0,0,0,.5);
+  transition:transform .45s var(--ease),background .4s,box-shadow .4s;
+}
+.role:hover{transform:translateY(-4px);background:linear-gradient(160deg,rgba(255,255,255,.24),rgba(255,255,255,.07))}
+.role:active{transform:scale(.95)}
+.role:focus-visible,.btn:focus-visible,.digits input:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+.role svg{width:46px;height:46px;stroke:var(--ink);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.role b{font-size:1.15rem}
+.role small{color:var(--ink-dim);font-size:.8rem;line-height:1.7}
+
+/* buttons */
+.btn{
+  all:unset;cursor:pointer;box-sizing:border-box;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 22px;border-radius:999px;font-weight:700;font-size:1rem;
+  background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5),0 8px 22px -8px rgba(0,0,0,.5);
+  transition:transform .35s var(--ease),opacity .3s,background .3s;
+}
+.btn:hover{background:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,.1))}
+.btn:active{transform:scale(.94)}
+.btn.primary{background:linear-gradient(160deg,rgba(47,224,207,.55),rgba(138,107,255,.4));border-color:rgba(255,255,255,.35)}
+.btn.danger{background:linear-gradient(160deg,rgba(255,93,122,.5),rgba(255,45,61,.28))}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn.busy{pointer-events:none;opacity:.7}
+.btn.sm{padding:10px 16px;font-size:.9rem}
+.back{align-self:flex-start}
+.back-row{width:min(100%,440px);display:flex}
+
+/* code digits */
+.digits{display:flex;gap:10px;justify-content:center;direction:ltr;margin:6px 0 18px}
+.digits input{
+  all:unset;box-sizing:border-box;width:62px;height:76px;text-align:center;
+  font-size:2rem;font-weight:800;font-family:inherit;caret-color:var(--teal);
+  border-radius:20px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:transform .35s var(--ease),border-color .3s,background .3s,box-shadow .3s;
+}
+.digits input:focus{transform:translateY(-3px) scale(1.05);border-color:var(--teal);background:rgba(255,255,255,.14);box-shadow:inset 0 2px 8px rgba(0,0,0,.2),0 0 0 4px rgba(47,224,207,.2)}
+.digits.bad{animation:shake .5s var(--ease)}
+.digits.bad input{border-color:var(--rose)}
+@keyframes shake{20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+
+/* collapsible (smooth open / close) */
+.collapse{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-8px);
+  transition:grid-template-rows .55s var(--ease),opacity .4s var(--ease),transform .55s var(--ease)}
+.collapse.open{grid-template-rows:1fr;opacity:1;transform:none}
+.collapse > div{overflow:hidden;min-height:0}
+.err{color:#ffb3be;font-size:.9rem;text-align:center;padding:0 0 14px;line-height:1.8}
+
+/* camera / viewer */
+.row{width:min(100%,760px);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;font-size:.88rem;font-weight:500;
+  background:linear-gradient(160deg,rgba(255,255,255,.17),rgba(255,255,255,.06));
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+  transition:background .4s,border-color .4s}
+.dot{width:9px;height:9px;border-radius:50%;background:#9aa4c4;transition:background .3s,box-shadow .3s}
+.dot.live{background:var(--teal);box-shadow:0 0 0 0 rgba(47,224,207,.7);animation:pulse 1.8s infinite}
+.dot.alert{background:var(--red);box-shadow:0 0 12px var(--red)}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(47,224,207,0)}100%{box-shadow:0 0 0 0 rgba(47,224,207,0)}}
+.chip.alert{background:linear-gradient(160deg,rgba(255,45,61,.5),rgba(255,45,61,.2));border-color:rgba(255,120,130,.6)}
+.chip b{direction:ltr;letter-spacing:.12em}
+
+.stage{width:min(100%,760px);padding:10px;border-radius:34px}
+.stage .frame{position:relative;border-radius:26px;overflow:hidden;background:#04060f;aspect-ratio:4/3;max-height:52dvh;width:100%;margin:0 auto}
+.stage video{width:100%;height:100%;object-fit:contain;display:block;background:#04060f}
+.stage .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink-dim);transition:opacity .5s}
+.stage .hint.hide{opacity:0;pointer-events:none}
+
+.settings{width:min(100%,760px)}
+.settings .inner{padding:20px 22px;margin-top:2px}
+.field{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:flex;justify-content:space-between;font-size:.92rem}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;background:rgba(255,255,255,.18);outline:none;direction:ltr}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:linear-gradient(160deg,#fff,#cfe);box-shadow:0 3px 10px rgba(0,0,0,.4)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff}
+
+/* toast + flash */
+#toast{
+  position:fixed;top:max(14px,env(safe-area-inset-top));left:50%;z-index:30;
+  width:min(92vw,420px);padding:16px 20px;border-radius:24px;text-align:center;font-weight:700;
+  transform:translate(-50%,-140%) scale(.9);opacity:0;pointer-events:none;
+  transition:transform .6s var(--ease),opacity .4s var(--ease);
+}
+#toast.show{transform:translate(-50%,0) scale(1);opacity:1}
+#toast.alert{background:linear-gradient(160deg,rgba(255,45,61,.62),rgba(120,10,25,.45));border-color:rgba(255,140,150,.7)}
+#flash{position:fixed;inset:0;z-index:20;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 0 7px var(--red),inset 0 0 90px 24px rgba(255,45,61,.85)}
+#flash.on{animation:redflash .6s ease-in-out 5}
+@keyframes redflash{0%,100%{opacity:0}45%,55%{opacity:1}}
+
+@media (max-width:420px){
+  .digits input{width:56px;height:70px}
+  .roles{gap:10px}
+}
+/* tablet */
+@media (min-width:768px){
+  .panel{width:min(100%,520px);padding:36px 34px}
+  h1{font-size:1.9rem}
+  p.sub{font-size:1.05rem}
+  .roles{gap:20px}
+  .role{padding:38px 16px 30px}
+  .role svg{width:60px;height:60px}
+  .role b{font-size:1.3rem}
+  .role small{font-size:.9rem}
+  .digits{gap:14px}
+  .digits input{width:74px;height:90px;font-size:2.4rem}
+  .back-row{width:min(100%,520px)}
+  .row,.settings,.stage{width:min(100%,980px)}
+  .stage{padding:14px;border-radius:40px}
+  .stage .frame{max-height:64dvh;border-radius:30px}
+  .btn{padding:15px 30px}
+  .btn.sm{padding:12px 22px}
+  .chip{font-size:.95rem}
+  #toast{width:min(90vw,480px);font-size:1.05rem}
+}
+/* laptop / desktop */
+@media (min-width:1100px){
+  .panel{width:min(100%,580px)}
+  .back-row{width:min(100%,580px)}
+  .row,.settings,.stage{width:min(100%,1120px)}
+  .stage .frame{aspect-ratio:16/9;max-height:68dvh}
+  .btn,.role{cursor:pointer}
+}
+/* phones in landscape / short windows */
+@media (max-height:540px){
+  .screen{gap:10px;padding-top:10px;padding-bottom:10px;overflow-y:auto;justify-content:flex-start}
+  .screen > :first-child{margin-top:auto}
+  .screen > :last-child{margin-bottom:auto}
+  .panel{padding:18px}
+  h1{font-size:1.25rem}
+  p.sub{margin-bottom:12px}
+  .digits input{height:60px}
+  .stage .frame{max-height:56dvh}
+}
+@media (prefers-reduced-motion:reduce){
+  .orb{animation:none}
+  .screen,.screen.active,.collapse{transition-duration:.01s;transition-delay:0s}
+}
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<div id="flash"></div>
+<div id="toast" class="glass"></div>
+
+<div id="app">
+
+  <!-- 1. انتخاب نقش -->
+  <section class="screen active" id="s-role">
+    <div class="glass panel">
+      <h1 class="center">کدوم نقش رو می‌خوای؟</h1>
+      <p class="sub center">این گوشی یا دوربین میشه، یا نمایشگر.</p>
+      <div class="roles">
+        <button class="role" id="pick-cam">
+          <svg viewBox="0 0 48 48"><path d="M6 15a4 4 0 0 1 4-4h5l3-4h12l3 4h5a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z"/><circle cx="24" cy="25" r="8"/></svg>
+          <b>دوربین</b><small>تصویر این گوشی پخش میشه</small>
+        </button>
+        <button class="role" id="pick-view">
+          <svg viewBox="0 0 48 48"><rect x="5" y="8" width="38" height="26" rx="4"/><path d="M17 41h14M24 34v7"/><path d="m20 15 10 6-10 6z"/></svg>
+          <b>نمایشگر</b><small>تصویر دوربین رو زنده ببین</small>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. انتخاب کد (دوربین) -->
+  <section class="screen" id="s-cam-code">
+    <div class="back-row"><button class="btn sm back" data-back>بازگشت</button></div>
+    <div class="glass panel">
+      <h1 class="center">یه کد ۴ رقمی انتخاب کن</h1>
+      <p class="sub center">نمایشگر باید دقیقاً همین کد رو بزنه تا بتونه تصویر رو ببینه.</p>
+      <div class="digits" id="cam-digits"><input inputmode="numeric" maxlength="1" aria-label="رقم ۱"><input inputmode="numeric" maxlength="1" aria-label="رقم ۲"><input inputmode="numeric" maxlength="1" aria-label="رقم ۳"><input inputmode="numeric" maxlength="1" aria-label="رقم ۴"></div>
+      <div class="collapse" id="cam-err"><div><div class="err" id="cam-err-t"></div></div></div>
+      <button class="btn primary block" id="cam-start" disabled>شروع پخش</button>
+    </div>
+  </section>
+
+  <!-- 3. دوربین فعال -->
+  <section class="screen" id="s-cam">
+    <div class="row">
+      <span class="chip"><span class="dot" id="cam-dot"></span><span id="cam-status">در حال آماده‌سازی…</span></span>
+      <span class="chip">کد <b id="cam-code"></b></span>
+      <span class="chip">بیننده: <b id="cam-viewers">0</b></span>
+    </div>
+    <div class="glass stage">
+      <div class="frame"><video id="cam-video" autoplay muted playsinline></video></div>
+    </div>
+    <div class="row">
+      <button class="btn sm" id="cam-gear">تنظیمات</button>
+      <button class="btn sm danger" id="cam-stop">توقف پخش</button>
+    </div>
+    <div class="collapse settings" id="cam-settings"><div>
+      <div class="glass inner">
+        <div class="field">
+          <label for="sens"><span>حساسیت تشخیص حرکت</span><b id="sens-val">۵</b></label>
+          <input type="range" id="sens" min="1" max="10" value="5">
+        </div>
+        <div class="field">
+          <button class="btn sm" id="cam-flip">عوض کردن دوربین (جلو / عقب)</button>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 4. وارد کردن کد (نمایشگر) -->
+  <section class="screen" id="s-view-code">
+    <div class="back-row"><button class="btn sm back" data-back>بازگشت</button></div>
+    <div class="glass panel">
+      <h1 class="center">کد دوربین رو وارد کن</h1>
+      <p class="sub center">همون کد ۴ رقمی که روی گوشی دوربین انتخاب شده.</p>
+      <div class="digits" id="view-digits"><input inputmode="numeric" maxlength="1" aria-label="رقم ۱"><input inputmode="numeric" maxlength="1" aria-label="رقم ۲"><input inputmode="numeric" maxlength="1" aria-label="رقم ۳"><input inputmode="numeric" maxlength="1" aria-label="رقم ۴"></div>
+      <div class="collapse" id="view-err"><div><div class="err" id="view-err-t"></div></div></div>
+      <button class="btn primary block" id="view-go" disabled>اتصال</button>
+    </div>
+  </section>
+
+  <!-- 5. نمایشگر زنده -->
+  <section class="screen" id="s-view">
+    <div class="row">
+      <span class="chip"><span class="dot live" id="view-dot"></span><span id="view-status">زنده</span></span>
+      <span class="chip" id="last-motion">حرکتی ثبت نشده</span>
+    </div>
+    <div class="glass stage">
+      <div class="frame"><video id="view-video" autoplay muted playsinline></video></div>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="btn sm danger" id="view-stop">قطع اتصال</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const PREFIX = 'lgcam-erfan-v1-';
+  const ICE = { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
+  ]};
+  const fa = n => String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+
+  /* ---------- navigation ---------- */
+  let current = 's-role';
+  function show(id){
+    if (id === current) return;
+    $('#' + current).classList.remove('active');
+    $('#' + id).classList.add('active');
+    current = id;
+  }
+
+  /* ---------- collapsible panels ---------- */
+  const toggle = (el, open) => el.classList.toggle('open', open ?? !el.classList.contains('open'));
+  function showErr(boxId, textId, msg){
+    $(textId).textContent = msg;
+    toggle($(boxId), true);
+  }
+  const hideErr = boxId => toggle($(boxId), false);
+
+  /* ---------- toast & flash ---------- */
+  let toastTimer;
+  function toast(msg, kind = '', ms = 4000){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.className = 'glass ' + kind;
+    void t.offsetWidth;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+  }
+  let flashTimer;
+  function redFlash(){
+    const f = $('#flash');
+    f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => f.classList.remove('on'), 3000);
+  }
+
+  /* ---------- 4-digit input ---------- */
+  function codeInput(root, onChange){
+    const ins = [...root.querySelectorAll('input')];
+    const get = () => ins.map(x => x.value).join('');
+    ins.forEach((el, i) => {
+      el.addEventListener('input', () => {
+        el.value = el.value.replace(/\D/g, '').slice(-1);
+        if (el.value && ins[i + 1]) ins[i + 1].focus();
+        root.classList.remove('bad');
+        onChange(get());
+      });
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !el.value && ins[i - 1]) { ins[i - 1].focus(); ins[i - 1].value = ''; onChange(get()); }
+        if (e.key === 'Enter' && get().length === 4) {
+          const go = root.closest('.screen').querySelector('.btn.primary');
+          if (go && !go.disabled) go.click();
+        }
+      });
+      el.addEventListener('paste', e => {
+        const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+        if (!d) return;
+        e.preventDefault();
+        ins.forEach((x, k) => x.value = d[k] || '');
+        ins[Math.min(d.length, 3)].focus();
+        onChange(get());
+      });
+      el.addEventListener('focus', () => el.select());
+    });
+    return {
+      get,
+      clear(){ ins.forEach(x => x.value = ''); onChange(''); },
+      focus(){ ins[0].focus(); },
+      shake(){ root.classList.remove('bad'); void root.offsetWidth; root.classList.add('bad'); }
+    };
+  }
+  function setBusy(btn, busy, label){
+    btn.classList.toggle('busy', busy);
+    if (label) btn.textContent = label;
+  }
+
+  /* ---------- state ---------- */
+  let peer = null, stream = null, wakeLock = null;
+  let facing = 'environment';
+  const viewers = new Map();   // peerId -> {conn, call}
+  let motionTimer = null;
+  let viewerConn = null;
+
+  async function lockScreen(){
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && stream) lockScreen();
+  });
+
+  function teardown(){
+    clearInterval(motionTimer); motionTimer = null;
+    viewers.forEach(v => { try { v.call && v.call.close(); v.conn.close(); } catch (e) {} });
+    viewers.clear();
+    if (viewerConn) { try { viewerConn.close(); } catch (e) {} viewerConn = null; }
+    if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+    $('#cam-video').srcObject = null;
+    $('#view-video').srcObject = null;
+    $('#flash').classList.remove('on');
+    sirenStop();
+    prev = null;
+  }
+
+  /* =====================================================
+     CAMERA
+  ===================================================== */
+  const camDigits = codeInput($('#cam-digits'), v => {
+    $('#cam-start').disabled = v.length !== 4;
+    if (v.length < 4) hideErr('#cam-err');
+  });
+
+  $('#pick-cam').onclick = () => { show('s-cam-code'); setTimeout(() => camDigits.focus(), 500); };
+  $('#pick-view').onclick = () => { show('s-view-code'); setTimeout(() => viewDigits.focus(), 500); };
+  document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => {
+    teardown(); camDigits.clear(); viewDigits.clear();
+    hideErr('#cam-err'); hideErr('#view-err');
+    show('s-role');
+  });
+
+  // Audio must be unlocked by a user gesture
+  let audioCtx = null;
+  function unlockAudio(){
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) {}
+  }
+
+  let sirenNodes = null;
+  function sirenPlay(ms = 5000){
+    if (!audioCtx) return;
+    sirenStop();
+    const t = audioCtx.currentTime, d = ms / 1000;
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    for (let i = 0; i < d * 2; i++) {            // 2 sweeps per second
+      const s = t + i * 0.5;
+      osc.frequency.setValueAtTime(650, s);
+      osc.frequency.linearRampToValueAtTime(1450, s + 0.5);
+    }
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.7, t + 0.05);
+    gain.gain.setValueAtTime(0.7, t + d - 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + d + 0.05);
+    sirenNodes = { osc, gain };
+  }
+  function sirenStop(){
+    if (!sirenNodes) return;
+    try { sirenNodes.osc.stop(); sirenNodes.osc.disconnect(); sirenNodes.gain.disconnect(); } catch (e) {}
+    sirenNodes = null;
+  }
+
+  async function getCam(){
+    return navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facing }, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } },
+      audio: false
+    });
+  }
+
+  $('#cam-start').onclick = () => {
+    const code = camDigits.get();
+    if (code.length !== 4) return;
+    unlockAudio();
+    const btn = $('#cam-start');
+    setBusy(btn, true, 'در حال اتصال…');
+    hideErr('#cam-err');
+
+    const fail = msg => {
+      teardown();
+      setBusy(btn, false, 'شروع پخش');
+      camDigits.shake();
+      showErr('#cam-err', '#cam-err-t', msg);
+    };
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return fail('این مرورگر یا این آدرس اجازه‌ی استفاده از دوربین نمیده. صفحه باید با https باز شده باشه.');
+    }
+
+    peer = new Peer(PREFIX + code, { config: ICE });
+
+    peer.on('open', async () => {
+      try {
+        stream = await getCam();
+      } catch (e) {
+        return fail('به دوربین دسترسی نداریم. اجازه‌ی دوربین رو بده و دوباره امتحان کن.');
+      }
+      const v = $('#cam-video');
+      v.srcObject = stream;
+      $('#cam-code').textContent = code;
+      $('#cam-viewers').textContent = fa(0);
+      setCamStatus('منتظر نمایشگر', 'live');
+      lockScreen();
+      startMotion();
+      try {
+        const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        $('#cam-flip').parentElement.style.display = cams.length > 1 ? '' : 'none';
+      } catch (e) {}
+      setBusy(btn, false, 'شروع پخش');
+      show('s-cam');
+    });
+
+    peer.on('connection', conn => {
+      conn.on('open', () => {
+        const call = peer.call(conn.peer, stream);
+        viewers.set(conn.peer, { conn, call });
+        updateViewers();
+      });
+      const drop = () => { viewers.delete(conn.peer); updateViewers(); };
+      conn.on('close', drop);
+      conn.on('error', drop);
+    });
+
+    peer.on('disconnected', () => { if (peer && !peer.destroyed) peer.reconnect(); });
+
+    peer.on('error', err => {
+      if (err.type === 'unavailable-id') fail('این کد الان دست یکی دیگه‌ست. یه کد دیگه انتخاب کن.');
+      else if (current === 's-cam-code') fail('اتصال به سرور برقرار نشد. اینترنت رو چک کن و دوباره بزن.');
+      else if (err.type !== 'peer-unavailable') setCamStatus('مشکل در اتصال', '');
+    });
+  };
+
+  function updateViewers(){
+    const n = viewers.size;
+    $('#cam-viewers').textContent = fa(n);
+    if (current === 's-cam') setCamStatus(n ? 'در حال پخش زنده' : 'منتظر نمایشگر', 'live');
+  }
+  function setCamStatus(text, dot){
+    $('#cam-status').textContent = text;
+    $('#cam-dot').className = 'dot ' + dot;
+    $('#cam-dot').parentElement.classList.toggle('alert', dot === 'alert');
+  }
+
+  $('#cam-gear').onclick = () => toggle($('#cam-settings'));
+  $('#cam-stop').onclick = () => {
+    teardown();
+    $('#cam-settings').classList.remove('open');
+    camDigits.clear();
+    show('s-role');
+  };
+  $('#sens').oninput = e => { $('#sens-val').textContent = fa(e.target.value); };
+  $('#cam-flip').onclick = async () => {
+    if (!stream) return;
+    const old = stream;
+    facing = facing === 'environment' ? 'user' : 'environment';
+    try {
+      const fresh = await getCam();
+      const track = fresh.getVideoTracks()[0];
+      viewers.forEach(v => {
+        const pc = v.call && v.call.peerConnection;
+        const sender = pc && pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) sender.replaceTrack(track);
+      });
+      stream = fresh;
+      $('#cam-video').srcObject = fresh;
+      old.getTracks().forEach(t => t.stop());
+      prev = null;
+    } catch (e) {
+      facing = facing === 'environment' ? 'user' : 'environment';
+      toast('عوض کردن دوربین ممکن نشد');
+    }
+  };
+
+  /* ---------- motion detection ---------- */
+  const W = 64, H = 48;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  let prev = null, hits = 0, lastAlarm = 0, armedAt = 0;
+
+  function startMotion(){
+    prev = null; hits = 0; lastAlarm = 0;
+    armedAt = performance.now() + 2500;  // ignore camera auto-exposure at start
+    clearInterval(motionTimer);
+    motionTimer = setInterval(motionTick, 200);
+  }
+  function motionTick(){
+    const v = $('#cam-video');
+    if (!v.videoWidth) return;
+    cx.drawImage(v, 0, 0, W, H);
+    const d = cx.getImageData(0, 0, W, H).data;
+    const g = new Uint8Array(W * H);
+    for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = d[j] * .3 + d[j + 1] * .59 + d[j + 2] * .11;
+    if (prev) {
+      let changed = 0;
+      for (let i = 0; i < g.length; i++) if (Math.abs(g[i] - prev[i]) > 28) changed++;
+      const sens = +$('#sens').value;
+      const limit = 0.12 / sens;                 // share of pixels that must change
+      hits = (changed / g.length) > limit ? hits + 1 : 0;
+      const now = performance.now();
+      if (hits >= 2 && now > armedAt && now - lastAlarm > 6000) { hits = 0; lastAlarm = now; onMotion(); }
+    }
+    prev = g;
+  }
+  function onMotion(){
+    sirenPlay(5000);
+    setCamStatus('حرکت تشخیص داده شد!', 'alert');
+    setTimeout(() => { if (current === 's-cam') updateViewers(); }, 5000);
+    viewers.forEach(v => { try { v.conn.send({ type: 'motion', t: Date.now() }); } catch (e) {} });
+  }
+
+  /* =====================================================
+     VIEWER
+  ===================================================== */
+  const viewDigits = codeInput($('#view-digits'), v => {
+    $('#view-go').disabled = v.length !== 4;
+    if (v.length < 4) hideErr('#view-err');
+  });
+
+  $('#view-go').onclick = () => {
+    const code = viewDigits.get();
+    if (code.length !== 4) return;
+    const btn = $('#view-go');
+    setBusy(btn, true, 'در حال اتصال…');
+    hideErr('#view-err');
+    let settled = false, timer;
+
+    const fail = msg => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      teardown();
+      setBusy(btn, false, 'اتصال');
+      viewDigits.shake();
+      showErr('#view-err', '#view-err-t', msg);
+    };
+
+    peer = new Peer({ config: ICE });
+
+    peer.on('open', () => {
+      viewerConn = peer.connect(PREFIX + code, { reliable: true });
+      timer = setTimeout(() => fail('جوابی از دوربین نیومد. کد رو چک کن یا مطمئن شو دوربین روشنه.'), 15000);
+
+      viewerConn.on('data', m => { if (m && m.type === 'motion') viewerMotion(); });
+      viewerConn.on('close', () => {
+        if (settled && current === 's-view') leaveViewer('ارتباط با دوربین قطع شد');
+      });
+    });
+
+    peer.on('call', call => {
+      call.answer();
+      call.on('stream', s => {
+        if (settled) return;
+        settled = true; clearTimeout(timer);
+        const v = $('#view-video');
+        v.srcObject = s;
+        v.play().catch(() => {});
+        $('#last-motion').textContent = 'حرکتی ثبت نشده';
+        setBusy(btn, false, 'اتصال');
+        show('s-view');
+      });
+    });
+
+    peer.on('error', err => {
+      if (err.type === 'peer-unavailable') fail('دوربینی با این کد پیدا نشد.');
+      else if (!settled) fail('اتصال برقرار نشد. اینترنت رو چک کن و دوباره امتحان کن.');
+    });
+  };
+
+  function viewerMotion(){
+    redFlash();
+    toast('⚠ حرکت تشخیص داده شد', 'alert', 4000);
+    const n = new Date();
+    const p = x => String(x).padStart(2, '0');
+    $('#last-motion').textContent = 'آخرین حرکت: ' + fa(`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`);
+    if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 250]);
+  }
+
+  function leaveViewer(msg){
+    teardown();
+    viewDigits.clear();
+    show('s-view-code');
+    if (msg) toast(msg);
+  }
+  $('#view-stop').onclick = () => { teardown(); viewDigits.clear(); show('s-role'); };
+
+  window.addEventListener('pagehide', teardown);
+})();
+</script>
+</body>
+</html>
